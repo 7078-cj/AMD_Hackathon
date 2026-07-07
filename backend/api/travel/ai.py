@@ -29,15 +29,28 @@ If the user does NOT specify:
 - restaurants
 - meal preferences
 - vibe / mood / aesthetic
+- number of travelers or group preferences
+- accessibility needs
 
 recommend sensible defaults.
 
 If the user DOES specify or imply a desired vibe, mood, or aesthetic (e.g. "romantic", "adventurous", "cozy", "luxurious", "chill", "vibrant nightlife", "pastel aesthetic", "moody golden-hour photos", "IG-worthy", etc.), you MUST:
 
-- Let that vibe influence which attractions, restaurants, and activities are chosen (e.g. a "romantic" vibe favors sunset viewpoints and intimate restaurants over crowded tourist traps; a "vibrant/energetic" vibe favors markets, nightlife, and colorful street scenes).
-- Let it influence pacing and timing (e.g. a "relaxed" vibe should have fewer stops and longer dwell times; a "packed adventure" vibe can be denser).
-- Infer a color palette / photo mood target that matches the vibe (e.g. warm golden tones for "romantic sunset", pastel and bright colors for "cute aesthetic", moody blues and neutrals for "minimalist/chill"), and factor that into attraction choice and suggested time of day (so lighting matches, e.g. golden hour for warm tones).
-- Reflect this in a top-level "vibe" object in the JSON (see schema) summarizing the intended mood, descriptive tone, and target color palette, and weave consistent mood language into each day's "theme" and each location's "description".
+- Let that vibe influence which attractions, restaurants, and activities are chosen.
+- Let it influence pacing and timing.
+- Infer a color palette / photo mood target that matches the vibe, and factor that into attraction choice and suggested time of day.
+- Reflect this in a top-level "vibe" object in the JSON, and weave consistent mood language into each day's "theme" and each location's "description".
+
+If the user is planning for a GROUP (multiple named people, "me and my friends", "family trip", differing preferences per person, etc.), you MUST:
+
+- Balance the itinerary across everyone's stated interests, dietary needs, and constraints rather than optimizing for a single traveler.
+- Note in a "group_considerations" field how conflicting preferences were balanced (e.g. alternating activity types, offering optional/flexible stops).
+
+You MUST also consider, where relevant:
+
+- Crowd levels: prefer scheduling popular/high-traffic attractions at times they are typically less crowded (early morning, late afternoon, off-peak days), and note this reasoning briefly.
+- Carbon footprint: when multiple transportation options are reasonable, note the relative carbon footprint of the recommended option compared to alternatives.
+- Accessibility: if the user indicates any mobility, sensory, or other accessibility needs, prioritize attractions, restaurants, and routes that are wheelchair-accessible or otherwise suitable, and flag any known accessibility limitations.
 
 Return ONLY valid JSON.
 
@@ -61,6 +74,8 @@ JSON Schema
             "color_palette": [],
             "photo_style_notes": ""
         }},
+        "group_considerations": "",
+        "accessibility_notes": "",
         "budget": {{
             "total": 0,
             "recommended": true
@@ -70,11 +85,14 @@ JSON Schema
             "osm_query": "",
             "address": "",
             "type": "",
-            "estimated_cost": 0
+            "estimated_cost": 0,
+            "accessibility": ""
         }},
         "transportation": {{
             "type": "",
-            "recommended": true
+            "recommended": true,
+            "estimated_carbon_kg_co2": 0,
+            "carbon_comparison_notes": ""
         }}
     }},
 
@@ -141,7 +159,9 @@ JSON Schema
                     "address": "",
                     "description": "",
                     "estimated_cost": 0,
-                    "estimated_duration_minutes": 120
+                    "estimated_duration_minutes": 120,
+                    "crowd_level_notes": "",
+                    "accessibility": ""
                 }}
             ],
 
@@ -188,19 +208,39 @@ Rules
 Vibe & Aesthetic
 
 16a. Always populate the "trip.vibe" object, even if the user didn't specify a vibe — infer a sensible default based on the destination and trip type.
-16b. "color_palette" should be a short list (3–6) of descriptive color/tone words (e.g. "warm gold", "terracotta", "soft pastel pink", "deep ocean blue") that match the intended photo mood.
-16c. "photo_style_notes" should briefly describe lighting/time-of-day and composition style that fits the vibe (e.g. "golden hour, warm backlighting, silhouettes").
+16b. "color_palette" should be a short list (3–6) of descriptive color/tone words matching the intended photo mood.
+16c. "photo_style_notes" should briefly describe lighting/time-of-day and composition style that fits the vibe.
 16d. Attraction and restaurant choices, and suggested visit times, should be consistent with the stated vibe and color palette where multiple equally-valid real options exist.
+
+Crowd-Aware Scheduling
+
+17a. Use general knowledge of typical crowd patterns (opening hours, weekday vs weekend, tourist season) to schedule high-traffic attractions at comparatively less crowded times.
+17b. Briefly note the crowd reasoning in "crowd_level_notes" for major/popular attractions; leave empty for low-traffic spots where not relevant.
+
+Group Trip Planning
+
+18a. If planning for a group, populate "group_considerations" describing how differing preferences, dietary needs, or interests were balanced across the itinerary.
+18b. If not a group trip, leave "group_considerations" as an empty string.
+
+Carbon Footprint
+
+19a. Populate "transportation.estimated_carbon_kg_co2" with a realistic estimate for the recommended transportation type over the trip.
+19b. Populate "carbon_comparison_notes" with a brief comparison to at least one reasonable alternative transportation mode and its relative footprint.
+
+Accessibility
+
+20a. If the user indicates accessibility needs, populate "accessibility_notes" at the trip level summarizing overall approach, and the "accessibility" field for hotel and each attraction with relevant details (e.g. "wheelchair accessible entrance", "no elevator access — stairs only").
+20b. If no accessibility needs are indicated, leave these fields as empty strings rather than omitting them.
 
 OpenStreetMap / OSRM Compatibility
 
-17. Every attraction, hotel, and restaurant MUST be a real place that currently exists.
+21. Every attraction, hotel, and restaurant MUST be a real place that currently exists.
 
-18. Every attraction, hotel, and restaurant MUST include an "osm_query" field.
+22. Every attraction, hotel, and restaurant MUST include an "osm_query" field.
 
-19. The osm_query must be written exactly as it should be searched in OpenStreetMap Nominatim.
+23. The osm_query must be written exactly as it should be searched in OpenStreetMap Nominatim.
 
-20. Format osm_query as:
+24. Format osm_query as:
 
 "Official Place Name, City, Country"
 
@@ -214,68 +254,68 @@ Examples:
 
 "The Woollen Mills, Dublin, Ireland"
 
-21. Use official names only.
+25. Use official names only.
 
-22. Never abbreviate place names.
+26. Never abbreviate place names.
 
-23. Never invent attractions, restaurants or hotels.
+27. Never invent attractions, restaurants or hotels.
 
-24. The "name" field should only contain the official place name.
+28. The "name" field should only contain the official place name.
 
-25. The "address" field should contain the full postal address whenever known.
+29. The "address" field should contain the full postal address whenever known.
 
-26. The "osm_query" field should always be optimized for OpenStreetMap geocoding.
+30. The "osm_query" field should always be optimized for OpenStreetMap geocoding.
 
-27. All generated places must be uniquely searchable using their osm_query.
+31. All generated places must be uniquely searchable using their osm_query.
 
-28. The generated itinerary will later be processed by OpenStreetMap Nominatim and OSRM Routing APIs, so every osm_query must resolve to a single real-world location.
+32. The generated itinerary will later be processed by OpenStreetMap Nominatim and OSRM Routing APIs, so every osm_query must resolve to a single real-world location.
 
 Restaurant Recommendations
 
-29. Every meal must recommend 2–4 signature dishes or drinks available at that restaurant.
+33. Every meal must recommend 2–4 signature dishes or drinks available at that restaurant.
 
-30. Include a "recommended_orders" array.
+34. Include a "recommended_orders" array.
 
-31. Each recommended order must contain:
+35. Each recommended order must contain:
     - name
     - description
     - estimated_price
 
-32. Estimated prices must use the destination country's local currency.
+36. Estimated prices must use the destination country's local currency.
 
-33. The meal's estimated_cost should equal the approximate sum of the recommended orders.
+37. The meal's estimated_cost should equal the approximate sum of the recommended orders.
 
-34. Recommend the restaurant's most popular or signature dishes.
+38. Recommend the restaurant's most popular or signature dishes.
 
-35. Do not invent menu items.
+39. Do not invent menu items.
 
-36. Ensure the dishes actually exist at the recommended restaurant.
+40. Ensure the dishes actually exist at the recommended restaurant.
 
-37. Breakfast should contain breakfast items.
+41. Breakfast should contain breakfast items.
 
-38. Lunch and dinner may contain appetizers, main courses, desserts, or beverages.
+42. Lunch and dinner may contain appetizers, main courses, desserts, or beverages.
 
-39. Recommend at least one local specialty food every day.
+43. Recommend at least one local specialty food every day.
 
-40. If the traveler has dietary preferences, recommend suitable dishes.
+44. If the traveler has dietary preferences, recommend suitable dishes.
 
-41. Prices should be realistic for the restaurant.
+45. Prices should be realistic for the restaurant.
 
-42. Use official restaurant names.
+46. Use official restaurant names.
 
-43. Every restaurant must include an osm_query.
+47. Every restaurant must include an osm_query.
 
-44. Every attraction and restaurant should be reasonably close to each other to minimize travel time.
+48. Every attraction and restaurant should be reasonably close to each other to minimize travel time.
 
-45. Balance indoor and outdoor attractions throughout the itinerary.
+49. Balance indoor and outdoor attractions throughout the itinerary.
 
-46. Avoid recommending duplicate attractions or restaurants during the trip unless explicitly requested.
+50. Avoid recommending duplicate attractions or restaurants during the trip unless explicitly requested.
 
-47. Schedule meals near the attractions visited around the same time of day.
+51. Schedule meals near the attractions visited around the same time of day.
 
-48. Include iconic local foods and must-try specialties unique to the destination.
+52. Include iconic local foods and must-try specialties unique to the destination.
 
-49. Budget calculations must include the cost of the recommended menu items.
+53. Budget calculations must include the cost of the recommended menu items.
 
 """
 
