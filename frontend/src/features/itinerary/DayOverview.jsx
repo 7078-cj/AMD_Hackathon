@@ -1,30 +1,82 @@
+import { useEffect, useState } from 'react'
+import DayBudgetCard from './DayBudgetCard'
 import MealPlanList from './MealPlanList'
 import PlaceCard from './PlaceCard'
 import RouteMap from './RouteMap'
 
-function DayOverview({ day, hotel }) {
+function DayOverview({ day, hotel, currency = 'PHP' }) {
+  const [focusLatLng, setFocusLatLng] = useState(null)
+  const [selectedRestaurantKey, setSelectedRestaurantKey] = useState(null)
+  const [selectedPlaceOrder, setSelectedPlaceOrder] = useState(null)
+
+  useEffect(() => {
+    setFocusLatLng(null)
+    setSelectedRestaurantKey(null)
+    setSelectedPlaceOrder(null)
+  }, [day.day])
+
+  const handleRestaurantClick = (meal, mealKey) => {
+    if (!meal.latitude || !meal.longitude) {
+      return
+    }
+
+    setSelectedRestaurantKey(mealKey)
+    setSelectedPlaceOrder(null)
+    setFocusLatLng([Number(meal.latitude), Number(meal.longitude)])
+  }
+
+  const handleRestaurantMarkerClick = (restaurant) => {
+    const mealKey = `${restaurant.type}-${restaurant.time}-${restaurant.restaurant || restaurant.name}`
+    setSelectedRestaurantKey(mealKey)
+    setSelectedPlaceOrder(null)
+    setFocusLatLng(restaurant.latLng)
+  }
+
+  const handlePlaceClick = (place) => {
+    if (!place.latitude || !place.longitude) {
+      return
+    }
+
+    setSelectedPlaceOrder(place.order)
+    setSelectedRestaurantKey(null)
+    setFocusLatLng([Number(place.latitude), Number(place.longitude)])
+  }
+
   return (
     <section className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
       <div className="space-y-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700">Day {day.day}</p>
-          <h2 className="mt-1 text-xl font-semibold text-slate-900">{day.theme}</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Budget today: <span className="font-semibold text-slate-800">PHP {day?.daily_budget?.total}</span>
-          </p>
-        </div>
+        <DayBudgetCard day={day} currency={currency} />
 
-        <MealPlanList meals={day.meal_plan || []} />
+        <MealPlanList
+          meals={day.meal_plan || []}
+          currency={currency}
+          onRestaurantClick={handleRestaurantClick}
+          selectedRestaurantKey={selectedRestaurantKey}
+        />
 
         <div className="space-y-3">
           {(day.places || []).map((place) => (
-            <PlaceCard key={`${day.day}-${place.order}-${place.name}`} place={place} />
+            <PlaceCard
+              key={`${day.day}-${place.order}-${place.name}`}
+              place={place}
+              currency={currency}
+              isSelected={selectedPlaceOrder === place.order}
+              onPlaceClick={handlePlaceClick}
+            />
           ))}
         </div>
       </div>
 
       <div className="lg:sticky lg:top-5 lg:h-fit">
-        <RouteMap day={day} hotel={hotel} />
+        <RouteMap
+          day={day}
+          hotel={hotel}
+          currency={currency}
+          focusLatLng={focusLatLng}
+          selectedRestaurantKey={selectedRestaurantKey}
+          selectedPlaceOrder={selectedPlaceOrder}
+          onRestaurantMarkerClick={handleRestaurantMarkerClick}
+        />
       </div>
     </section>
   )

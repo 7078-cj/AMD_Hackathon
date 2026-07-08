@@ -1,7 +1,11 @@
 import json
+import logging
 from typing import Dict, Any
 
 from ..utils import generate
+from .geocoder import Geocoder, enrich_itinerary, enrich_location, collect_unverified
+
+logger = logging.getLogger(__name__)
 
 
 def build_itinerary_prompt(user_prompt: str) -> str:
@@ -10,7 +14,7 @@ def build_itinerary_prompt(user_prompt: str) -> str:
     """
 
     return f"""
-You are an expert travel planner.
+You are an expert travel planner with deep, current, verifiable knowledge of real-world destinations.
 
 The user request is:
 
@@ -57,6 +61,8 @@ Return ONLY valid JSON.
 Do NOT include markdown.
 Do NOT explain.
 Do NOT wrap the JSON inside ```.
+Do NOT include comments or trailing commas anywhere in the JSON.
+Escape any double quotes or backslashes that appear inside string values so the JSON remains valid.
 
 JSON Schema
 
@@ -201,14 +207,14 @@ Rules
 10. Use complete addresses whenever possible.
 11. Do NOT generate latitude or longitude.
 12. Budget total must equal the breakdown.
-13. Generate the correct number of itinerary days.
+13. Generate the correct number of itinerary days, and "daily_itinerary" must contain exactly one entry per day (day numbers 1 through "days", with no gaps or duplicates).
 14. Never leave arrays empty.
 15. Always recommend at least 3 attractions per day.
 
 Vibe & Aesthetic
 
 16a. Always populate the "trip.vibe" object, even if the user didn't specify a vibe — infer a sensible default based on the destination and trip type.
-16b. "color_palette" should be a short list (3–6) of descriptive color/tone words matching the intended photo mood.
+16b. "color_palette" should be a short list (3–6) of hex color codes (e.g. "#FF7F50") matching the intended photo mood. Do NOT use color names or rgba — hex only, each starting with "#" and 6 hex digits.
 16c. "photo_style_notes" should briefly describe lighting/time-of-day and composition style that fits the vibe.
 16d. Attraction and restaurant choices, and suggested visit times, should be consistent with the stated vibe and color palette where multiple equally-valid real options exist.
 
@@ -232,15 +238,14 @@ Accessibility
 20a. If the user indicates accessibility needs, populate "accessibility_notes" at the trip level summarizing overall approach, and the "accessibility" field for hotel and each attraction with relevant details (e.g. "wheelchair accessible entrance", "no elevator access — stairs only").
 20b. If no accessibility needs are indicated, leave these fields as empty strings rather than omitting them.
 
-OpenStreetMap / OSRM Compatibility
+Real-World Accuracy (Critical)
 
-21. Every attraction, hotel, and restaurant MUST be a real place that currently exists.
-
-22. Every attraction, hotel, and restaurant MUST include an "osm_query" field.
-
-23. The osm_query must be written exactly as it should be searched in OpenStreetMap Nominatim.
-
-24. Format osm_query as:
+21. Every attraction, hotel, and restaurant MUST be a real, currently operating place. Do not invent plausible-sounding names, and do not recommend a place you believe has permanently closed.
+22. If you are not confident that a specific place genuinely exists and is currently open, do NOT include it. Replace it with a different, well-established, easily verifiable place that fits the same role in the itinerary (same neighborhood, similar cuisine/category, similar price point).
+23. Prefer well-known, easily verifiable places (established landmarks, long-running local institutions, recognized chains with a specific branch) over obscure or newly-opened venues you are less certain about, unless the user specifically asked for hidden gems — in which case still only use real, verifiable places.
+24. Every attraction, hotel, and restaurant MUST include an "osm_query" field.
+25. The osm_query must be written exactly as it should be searched in OpenStreetMap Nominatim.
+26. Format osm_query as:
 
 "Official Place Name, City, Country"
 
@@ -254,68 +259,47 @@ Examples:
 
 "The Woollen Mills, Dublin, Ireland"
 
-25. Use official names only.
-
-26. Never abbreviate place names.
-
-27. Never invent attractions, restaurants or hotels.
-
-28. The "name" field should only contain the official place name.
-
-29. The "address" field should contain the full postal address whenever known.
-
-30. The "osm_query" field should always be optimized for OpenStreetMap geocoding.
-
-31. All generated places must be uniquely searchable using their osm_query.
-
-32. The generated itinerary will later be processed by OpenStreetMap Nominatim and OSRM Routing APIs, so every osm_query must resolve to a single real-world location.
+27. Use official names only.
+28. Never abbreviate place names.
+29. Never invent attractions, restaurants, or hotels.
+30. The "name" field should only contain the official place name.
+31. The "address" field should contain the full postal address whenever known. If the exact street address is genuinely uncertain, provide the most specific verifiable location description you are confident about (e.g. neighborhood and city) rather than guessing a precise street number.
+32. The "osm_query" field should always be optimized for OpenStreetMap geocoding.
+33. All generated places must be uniquely searchable using their osm_query. For chains or common names (e.g. "Starbucks", "Costa Coffee"), the osm_query and address MUST include enough disambiguating detail (specific street or neighborhood) to identify the exact branch — never leave it generic enough to match multiple locations.
+34. The generated itinerary will later be processed by OpenStreetMap Nominatim and OSRM Routing APIs, so every osm_query must resolve to a single real-world location.
+35. Do not reuse a fictional or composite location under a real-sounding name — every place must correspond to one specific, actual real-world entity.
 
 Restaurant Recommendations
 
-33. Every meal must recommend 2–4 signature dishes or drinks available at that restaurant.
-
-34. Include a "recommended_orders" array.
-
-35. Each recommended order must contain:
+36. Every meal must recommend 2–4 signature dishes or drinks actually available at that restaurant.
+37. Include a "recommended_orders" array.
+38. Each recommended order must contain:
     - name
     - description
     - estimated_price
+39. Estimated prices must use the destination country's local currency.
+40. The meal's estimated_cost should equal the approximate sum of the recommended orders.
+41. Recommend the restaurant's most popular or signature dishes.
+42. Do not invent menu items.
+43. Ensure the dishes actually exist at the recommended restaurant. If uncertain about a restaurant's specific menu, recommend well-known local specialty dishes common to that cuisine and describe them generically, rather than inventing an oddly specific item.
+44. Breakfast should contain breakfast items.
+45. Lunch and dinner may contain appetizers, main courses, desserts, or beverages.
+46. Recommend at least one local specialty food every day.
+47. If the traveler has dietary preferences, recommend suitable dishes.
+48. Prices should be realistic for the restaurant and destination.
+49. Use official restaurant names.
+50. Every restaurant must include an osm_query.
+51. Every attraction and restaurant should be reasonably close to each other to minimize travel time.
+52. Balance indoor and outdoor attractions throughout the itinerary.
+53. Avoid recommending duplicate attractions or restaurants during the trip unless explicitly requested.
+54. Schedule meals near the attractions visited around the same time of day.
+55. Include iconic local foods and must-try specialties unique to the destination.
+56. Budget calculations must include the cost of the recommended menu items.
 
-36. Estimated prices must use the destination country's local currency.
+Currency & Numbers
 
-37. The meal's estimated_cost should equal the approximate sum of the recommended orders.
-
-38. Recommend the restaurant's most popular or signature dishes.
-
-39. Do not invent menu items.
-
-40. Ensure the dishes actually exist at the recommended restaurant.
-
-41. Breakfast should contain breakfast items.
-
-42. Lunch and dinner may contain appetizers, main courses, desserts, or beverages.
-
-43. Recommend at least one local specialty food every day.
-
-44. If the traveler has dietary preferences, recommend suitable dishes.
-
-45. Prices should be realistic for the restaurant.
-
-46. Use official restaurant names.
-
-47. Every restaurant must include an osm_query.
-
-48. Every attraction and restaurant should be reasonably close to each other to minimize travel time.
-
-49. Balance indoor and outdoor attractions throughout the itinerary.
-
-50. Avoid recommending duplicate attractions or restaurants during the trip unless explicitly requested.
-
-51. Schedule meals near the attractions visited around the same time of day.
-
-52. Include iconic local foods and must-try specialties unique to the destination.
-
-53. Budget calculations must include the cost of the recommended menu items.
+57. "currency" must be the destination's local currency, expressed as its 3-letter ISO 4217 code (e.g. "EUR", "JPY", "USD"), not a symbol or full name.
+58. All numeric fields (costs, budgets, carbon estimates) must be plain numbers, not strings, and must not include currency symbols or commas.
 
 """
 
@@ -356,17 +340,139 @@ def validate_itinerary(itinerary: Dict[str, Any]) -> Dict[str, Any]:
     return itinerary
 
 
-def create_itinerary(user_prompt: str) -> Dict[str, Any]:
+def build_replacement_prompt(unverified: list) -> str:
     """
-    Main function.
-
-    Returns AI itinerary before geocoding.
+    Asks the LLM for verifiable replacements for only the places that
+    failed geocoding, rather than regenerating the whole itinerary.
     """
 
-    itinerary = generate_itinerary(user_prompt)
+    listed = "\n".join(
+        f'- {p["role"]}: "{p["name"]}" (queried as "{p["osm_query"]}")'
+        for p in unverified
+    )
 
-    itinerary = validate_itinerary(itinerary)
+    return f"""
+The following places could not be geocoded and may not exist, may be
+misspelled, or may be too ambiguous to resolve to a single real-world
+location:
+
+{listed}
+
+For each one, provide a REAL, currently operating replacement that fits the
+same role (same city/neighborhood, same category — attraction, restaurant,
+or hotel — and a similar price point/vibe as the original). Follow the same
+osm_query formatting rules as before: "Official Place Name, City, Country",
+official name only, no abbreviations, disambiguated enough for a single
+OpenStreetMap/geocoding match.
+
+Return ONLY valid JSON, no markdown, no explanation, in this exact shape:
+
+{{
+  "replacements": {{
+    "<role>": {{
+      "name": "",
+      "osm_query": "",
+      "address": ""
+    }}
+  }}
+}}
+"""
+
+
+def resolve_unverified_places(
+    itinerary: Dict[str, Any],
+    unverified: list,
+    geocoder: Geocoder,
+) -> Dict[str, Any]:
+    """
+    Second pass: asks the LLM for replacements for places that failed
+    geocoding, patches them into the itinerary, and re-geocodes just those.
+    """
+
+    if not unverified:
+        return itinerary
+
+    prompt = build_replacement_prompt(unverified)
+    response = generate(prompt)
+
+    if not response["success"]:
+        logger.warning("Replacement generation failed: %s", response.get("error"))
+        return itinerary
+
+    replacements = response["result"].get("replacements", {})
+
+    hotel = itinerary.get("trip", {}).get("hotel")
+
+    for day in itinerary.get("daily_itinerary", []):
+        day_num = day.get("day")
+
+        for stop in day.get("to_go_locations", []):
+            role = f"day{day_num}_attraction_{stop.get('order')}"
+            new_data = replacements.get(role)
+            if new_data:
+                stop["name"] = new_data.get("name", stop.get("name"))
+                stop["osm_query"] = new_data.get("osm_query", stop.get("osm_query"))
+                stop["address"] = new_data.get("address", stop.get("address"))
+                enrich_location(geocoder, stop)
+
+        for meal in day.get("meal_plan", []):
+            role = f"day{day_num}_meal_{meal.get('type')}"
+            new_data = replacements.get(role)
+            if new_data:
+                meal["restaurant"] = new_data.get("name", meal.get("restaurant"))
+                meal["osm_query"] = new_data.get("osm_query", meal.get("osm_query"))
+                meal["address"] = new_data.get("address", meal.get("address"))
+
+                temp = {
+                    "restaurant": meal["restaurant"],
+                    "osm_query": meal["osm_query"],
+                    "address": meal["address"],
+                }
+                enrich_location(geocoder, temp)
+                meal["geocoded"] = temp.get("geocoded", False)
+                if temp.get("geocoded"):
+                    meal["address"] = temp["address"]
+                    meal["latitude"] = temp["latitude"]
+                    meal["longitude"] = temp["longitude"]
+
+    if hotel:
+        new_data = replacements.get("hotel")
+        if new_data:
+            hotel["name"] = new_data.get("name", hotel.get("name"))
+            hotel["osm_query"] = new_data.get("osm_query", hotel.get("osm_query"))
+            hotel["address"] = new_data.get("address", hotel.get("address"))
+            enrich_location(geocoder, hotel)
 
     return itinerary
 
 
+def create_itinerary(user_prompt: str) -> Dict[str, Any]:
+    """
+    Main function.
+
+    Generates the itinerary, geocodes every place via Geoapify, and retries
+    (with LLM-suggested replacements) any place that failed to geocode —
+    so downstream map/routing display isn't left with dead pins.
+    """
+
+    itinerary = generate_itinerary(user_prompt)
+    itinerary = validate_itinerary(itinerary)
+
+    itinerary = enrich_itinerary(itinerary)
+
+    unverified = collect_unverified(itinerary)
+
+    if unverified:
+        logger.info(
+            "Retrying %d unverified place(s): %s",
+            len(unverified),
+            [p["name"] for p in unverified],
+        )
+
+        geocoder = Geocoder()
+        try:
+            itinerary = resolve_unverified_places(itinerary, unverified, geocoder)
+        finally:
+            geocoder.close()
+
+    return itinerary

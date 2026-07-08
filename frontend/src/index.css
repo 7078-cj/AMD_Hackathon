@@ -1,1 +1,33 @@
 @import "tailwindcss";
+
+.trip-themed .trip-btn-primary {
+  background-color: var(--trip-primary);
+  color: white;
+}
+
+.trip-themed .trip-btn-primary:hover {
+  filter: brightness(0.92);
+}
+
+.trip-themed .trip-text-primary {
+  color: var(--trip-primary);
+}
+
+.trip-themed .trip-bg-soft {
+  background-color: var(--trip-primary-soft);
+}
+
+.trip-themed .trip-border-primary {
+  border-color: var(--trip-primary);
+}
+
+.trip-themed .trip-tab-active {
+  background-color: var(--trip-primary);
+  border-color: var(--trip-primary);
+  color: white;
+}
+
+.trip-themed .trip-tab-inactive:hover {
+  border-color: var(--trip-primary);
+  color: var(--trip-primary);
+}

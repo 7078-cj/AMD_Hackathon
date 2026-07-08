@@ -1,5 +1,5 @@
 import time
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import environ
 import httpx
@@ -196,6 +196,8 @@ def enrich_itinerary(itinerary: Dict):
                     meal["latitude"] = restaurant["latitude"]
                     meal["longitude"] = restaurant["longitude"]
 
+                meal["geocoded"] = restaurant.get("geocoded", False)
+
         print("\n==============================")
         print("GEOCODER COMPLETE")
         print("==============================")
@@ -205,3 +207,53 @@ def enrich_itinerary(itinerary: Dict):
         geocoder.close()
 
     return itinerary
+
+
+def collect_unverified(itinerary: Dict) -> List[Dict]:
+    """
+    Walks an itinerary that has already been through enrich_itinerary() and
+    returns a flat list of every place that failed geocoding, tagged with a
+    stable "role" key so a caller can patch the exact right field back in
+    after generating a replacement.
+
+    Each item: {"role": str, "name": str, "osm_query": str}
+    """
+
+    unverified = []
+
+    hotel = itinerary.get("trip", {}).get("hotel")
+    if hotel and not hotel.get("geocoded", False):
+        unverified.append({
+            "role": "hotel",
+            "name": hotel.get("name", ""),
+            "osm_query": hotel.get("osm_query", ""),
+        })
+
+    for day in itinerary.get("daily_itinerary", []):
+        day_num = day.get("day")
+
+        for stop in day.get("to_go_locations", []):
+            if not stop.get("geocoded", False):
+                unverified.append({
+                    "role": f"day{day_num}_attraction_{stop.get('order')}",
+                    "name": stop.get("name", ""),
+                    "osm_query": stop.get("osm_query", ""),
+                })
+
+        for meal in day.get("meal_plan", []):
+            if not meal.get("geocoded", False):
+                unverified.append({
+                    "role": f"day{day_num}_meal_{meal.get('type')}",
+                    "name": meal.get("restaurant", ""),
+                    "osm_query": meal.get("osm_query", ""),
+                })
+
+    return unverified
+
+
+def reverify_place(geocoder: Geocoder, osm_query: str) -> Optional[Dict]:
+    """
+    Re-runs a single geocode lookup, bypassing nothing (still cache-aware).
+    Used after a replacement place has been substituted in.
+    """
+    return geocoder.geocode(osm_query)

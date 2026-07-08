@@ -1,6 +1,7 @@
 import DayOverview from './DayOverview'
 import DayTabs from './DayTabs'
 import ItineraryHeader from './ItineraryHeader'
+import TripDetailsSections from './TripDetailsSections'
 
 function ItineraryViewer({
   itinerary,
@@ -54,10 +55,15 @@ function ItineraryViewer({
       </div>
 
       <ItineraryHeader trip={itinerary.trip} />
+      <TripDetailsSections
+        trip={itinerary.trip}
+        budgetBreakdown={itinerary.budgetBreakdown}
+        travelTips={itinerary.travelTips}
+      />
       <DayTabs days={itinerary.days} activeDay={activeDay} onDayChange={onDayChange} />
 
       {selectedDay ? (
-        <DayOverview day={selectedDay} hotel={itinerary.trip.hotel} />
+        <DayOverview day={selectedDay} hotel={itinerary.trip.hotel} currency={itinerary.trip.currency} />
       ) : (
         <div className="rounded-xl border border-slate-200 bg-white p-4 text-slate-600 shadow-sm">
           No itinerary day is available.
