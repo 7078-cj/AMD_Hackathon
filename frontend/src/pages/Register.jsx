@@ -34,57 +34,130 @@ function Register() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 p-6">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-        <h2 className="mb-6 text-center text-2xl font-bold text-gray-800">Register</h2>
-        <form onSubmit={registerUser} className="flex flex-col space-y-4">
-          <label className="flex flex-col font-medium text-gray-700">
-            Username
-            <input
-              type="text"
-              name="username"
-              required
-              className="mt-1 rounded-md border-2 border-gray-300 px-3 py-2 text-gray-700 outline-none focus:border-green-500"
-            />
-          </label>
+    <div className="flex min-h-screen bg-[#0A1418]">
+      {/* Left panel — brand / route visual, hidden on mobile */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden border-r border-[#23414D]">
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage: 'radial-gradient(#2CB1A3 1px, transparent 1px)',
+            backgroundSize: '32px 32px',
+          }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(160deg, rgba(14,76,107,0.35) 0%, rgba(10,20,24,0) 55%)',
+          }}
+        />
 
-          <label className="flex flex-col font-medium text-gray-700">
-            Email
-            <input
-              type="email"
-              name="email"
-              required
-              className="mt-1 rounded-md border-2 border-gray-300 px-3 py-2 text-gray-700 outline-none focus:border-green-500"
-            />
-          </label>
+        <svg
+          className="absolute inset-0 w-full h-full"
+          viewBox="0 0 600 800"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M 80 700 C 200 600, 150 480, 280 420 C 400 365, 380 260, 500 150"
+            fill="none"
+            stroke="#2CB1A3"
+            strokeWidth="2"
+            strokeDasharray="6 8"
+            opacity="0.6"
+          />
+          <circle cx="80" cy="700" r="5" fill="#2CB1A3" />
+          <circle cx="280" cy="420" r="5" fill="#2CB1A3" />
+          <circle cx="500" cy="150" r="6" fill="#2CB1A3" />
+        </svg>
 
-          <label className="flex flex-col font-medium text-gray-700">
-            Password
-            <input
-              type="password"
-              name="password"
-              required
-              className="mt-1 rounded-md border-2 border-gray-300 px-3 py-2 text-gray-700 outline-none focus:border-green-500"
-            />
-          </label>
+        <div className="relative z-10 flex flex-col justify-between p-12">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#2CB1A3]" />
+            <span className="font-mono text-xs tracking-[0.2em] text-[#8CA7AC] uppercase">
+              Aitinary
+            </span>
+          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-green-500 py-2 font-semibold text-white transition hover:bg-green-600 active:bg-green-700 disabled:cursor-not-allowed disabled:bg-green-300"
-          >
-            {loading ? 'Creating account...' : 'Register'}
-          </button>
-        </form>
+          <div>
+            <h1 className="text-4xl font-semibold text-[#E8F1F2] leading-tight max-w-sm">
+              Every trip,
+              <br />
+              fully mapped.
+            </h1>
+            <p className="mt-4 text-[#8CA7AC] max-w-sm">
+              Describe the trip, get a geocoded, routed itinerary — hotel,
+              meals, and stops verified and placed on the map.
+            </p>
+          </div>
 
-        {error ? <p className="mt-3 text-center text-sm text-rose-600">{error}</p> : null}
+          <p className="font-mono text-xs text-[#4E6B72]">AMD HACKATHON</p>
+        </div>
+      </div>
 
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link to="/login" className="text-cyan-500 hover:underline">
-            Login
-          </Link>
-        </p>
+      {/* Right panel — form */}
+      <div className="flex flex-1 justify-center items-center p-6">
+        <div className="w-full max-w-sm">
+          <div className="mb-8 lg:hidden flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#2CB1A3]" />
+            <span className="font-mono text-xs tracking-[0.2em] text-[#8CA7AC] uppercase">
+              Aitinary
+            </span>
+          </div>
+
+          <h2 className="text-2xl font-semibold text-[#E8F1F2]">Create account</h2>
+          <p className="mt-1 text-sm text-[#8CA7AC]">
+            Start planning your first route
+          </p>
+
+          <form onSubmit={registerUser} className="mt-8 flex flex-col space-y-5">
+            <label className="flex flex-col text-sm font-medium text-[#8CA7AC]">
+              Username
+              <input
+                type="text"
+                name="username"
+                required
+                className="mt-1.5 rounded-md border border-[#23414D] bg-[#11202A] px-3 py-2.5 text-[#E8F1F2] outline-none focus:border-[#2CB1A3] transition"
+              />
+            </label>
+
+            <label className="flex flex-col text-sm font-medium text-[#8CA7AC]">
+              Email
+              <input
+                type="email"
+                name="email"
+                required
+                className="mt-1.5 rounded-md border border-[#23414D] bg-[#11202A] px-3 py-2.5 text-[#E8F1F2] outline-none focus:border-[#2CB1A3] transition"
+              />
+            </label>
+
+            <label className="flex flex-col text-sm font-medium text-[#8CA7AC]">
+              Password
+              <input
+                type="password"
+                name="password"
+                required
+                className="mt-1.5 rounded-md border border-[#23414D] bg-[#11202A] px-3 py-2.5 text-[#E8F1F2] outline-none focus:border-[#2CB1A3] transition"
+              />
+            </label>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 mt-2 rounded-md bg-[#2CB1A3] font-semibold text-[#0A1418] transition hover:bg-[#25998D] active:bg-[#1F857A] disabled:cursor-not-allowed disabled:bg-[#1F857A]/40 disabled:text-[#8CA7AC]"
+            >
+              {loading ? 'Creating account...' : 'Register'}
+            </button>
+          </form>
+
+          {error ? <p className="mt-3 text-sm text-rose-400">{error}</p> : null}
+
+          <p className="mt-6 text-sm text-[#8CA7AC]">
+            Already have an account?{' '}
+            <Link to="/login" className="text-[#2CB1A3] hover:underline">
+              Login
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )
