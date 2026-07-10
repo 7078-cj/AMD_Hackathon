@@ -300,6 +300,24 @@ Currency & Numbers
 
 57. "currency" must be the destination's local currency, expressed as its 3-letter ISO 4217 code (e.g. "EUR", "JPY", "USD"), not a symbol or full name.
 58. All numeric fields (costs, budgets, carbon estimates) must be plain numbers, not strings, and must not include currency symbols or commas.
+59. ALL monetary values anywhere in the output — hotel costs, meal costs, recommended_orders prices, daily_budget, budget_breakdown, budget.total — MUST be expressed in the destination's local currency (the same code as "trip.currency"). Never mix currencies within the output.
+
+Currency Conversion
+
+60a. If the user states a budget using a currency, country, or informal money term that differs from the destination's local currency (e.g. "50 pesos" for a trip to the US, "$500" for a trip to Japan, "€300" for a trip to the Philippines), you MUST detect this, infer the currency they most likely meant from context, and convert that stated amount into the destination's local currency using a realistic, current approximate exchange rate before using it anywhere in the itinerary or budget calculations. "trip.budget.total" and every other monetary value must reflect the CONVERTED amount, never the user's original figure in their original currency.
+60b. Add one entry to "travel_tips" stating the conversion performed in plain language, e.g. "Your stated budget of ~50 PHP was converted to ~0.90 USD (approximate rate: 1 USD ≈ 56 PHP) since this trip is priced in USD." If no conversion was needed, do not add this tip.
+60c. Exchange rates fluctuate; use your best current approximate knowledge and phrase the travel_tips note as approximate (e.g. "approximate rate", "~").
+
+Budget Viability
+
+61a. After converting (if needed), evaluate whether the resulting budget realistically covers the requested trip: the specified (or implied) hotel quality, number of travelers, number of days, and a reasonable baseline of meals, transport, and activities at that destination.
+61b. If the budget is unrealistically LOW for the trip as specified, do NOT force-fit it by inventing implausibly cheap real places, silently skipping meals, or leaving arrays empty. Instead:
+    - First try to make the trip work within a more economical-but-still-real version (budget-tier hotel, free/low-cost attractions, cheaper local eateries) before raising the total further.
+    - If still insufficient, raise "trip.budget.total" (and the breakdown) to the lowest realistic amount that can deliver the requested trip.
+    - Add one entry to "travel_tips" explaining the adjustment in plain language, e.g. "Your budget was too low to realistically cover 3 nights in Tokyo with meals and activities, so it's been adjusted to a more realistic ~45000 JPY using a budget-tier hotel and mostly free attractions."
+61c. If the budget is unrealistically HIGH relative to a comfortable version of the requested trip, you do not need to reduce it — instead optimize the itinerary to use it well (higher-tier hotel, more premium dining, added experiences), and add one entry to "travel_tips" noting this, e.g. "Your budget comfortably exceeds a standard trip of this length, so we've upgraded the hotel tier and added a few premium experiences."
+61d. If the budget is realistic and sufficient as given, do not add a viability-related travel_tips entry.
+61e. In all cases, "trip.budget.total" must remain internally consistent with "budget_breakdown.total" and the sum of each day's "daily_budget.total" (per rule 12) — never leave a mismatch between any travel_tips narrative and the actual numbers.
 
 """
 

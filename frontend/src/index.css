@@ -1,34 +1,76 @@
 @import "tailwindcss";
 
+.trip-themed {
+  --trip-text: #f8fafc;
+  --trip-text-secondary: #d6e4e7;
+  --trip-text-muted: #a8c0c5;
+}
+
+/* Buttons */
+
 .trip-themed .trip-btn-primary {
-  background-color: var(--trip-primary);
-  color: white;
+  background: var(--trip-primary);
+  color: var(--trip-text);
+  border: 1px solid transparent;
+  transition: all .2s ease;
 }
 
 .trip-themed .trip-btn-primary:hover {
-  filter: brightness(0.92);
+  filter: brightness(1.08);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--trip-primary) 35%, transparent);
 }
+
+.trip-themed .trip-btn-primary:active {
+  transform: scale(.98);
+}
+
+/* Text */
 
 .trip-themed .trip-text-primary {
   color: var(--trip-primary-text, var(--trip-primary));
 }
 
+.trip-themed .trip-text-secondary {
+  color: var(--trip-text-secondary);
+}
+
+.trip-themed .trip-text-muted {
+  color: var(--trip-text-muted);
+}
+
+/* Background */
 
 .trip-themed .trip-bg-soft {
-  background-color: var(--trip-primary-soft);
+  background: var(--trip-primary-soft);
 }
 
 .trip-themed .trip-border-primary {
   border-color: var(--trip-primary);
 }
 
+/* Day Tabs */
+
 .trip-themed .trip-tab-active {
-  background-color: var(--trip-primary);
-  border-color: var(--trip-primary);
-  color: white;
+  background: color-mix(in srgb, var(--trip-primary) 22%, #11202A);
+  border: 1px solid var(--trip-primary);
+  color: var(--trip-text);
+  font-weight: 600;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--trip-primary) 30%, transparent);
+}
+
+.trip-themed .trip-tab-active:hover {
+  filter: brightness(1.08);
+}
+
+.trip-themed .trip-tab-inactive {
+  background: #11202A;
+  border: 1px solid #23414D;
+  color: var(--trip-text-muted);
+  transition: all .2s ease;
 }
 
 .trip-themed .trip-tab-inactive:hover {
   border-color: var(--trip-primary);
-  color: var(--trip-primary-text, var(--trip-primary));
+  color: var(--trip-text);
+  background: color-mix(in srgb, var(--trip-primary) 12%, #11202A);
 }
