@@ -1,51 +1,71 @@
----
+# Aitinerary
 
-# React-Django-Boilerplate
+AI-powered travel planner built for the AMD Developer Hackathon. Aitinerary generates personalized, day-by-day trip itineraries based on your travel "vibe" — chill, adventure, luxury, or cultural — complete with an adaptive UI and clean, exportable plans.
 
-A modular full‑stack boilerplate for building **React + Django** applications.
+Live demo: https://amd-hackathon-pi.vercel.app
 
-This repository supports **two development paths**:
+## Features
 
-* **`main` branch** → Full-featured, scalable apps for large projects.
-* **`simple_apps` branch** → Lightweight version for smaller apps or prototypes.
+- Generates structured, day-wise itineraries from a simple trip description
+- Personalizes recommendations based on user-selected travel vibe
+- Responsive UI for desktop and mobile
+- AI-generated itinerary content ready for real-world travel use
 
----
+## Tech Stack
 
-## Branches
+- **Frontend:** React (JavaScript)
+- **Backend:** Python
 
-### 1. `main` branch
+## Project Structure
 
-- Full architecture with **Redux, modular backend, and all features**.
-- Suitable for **large-scale production apps**.
-- Includes advanced **state management, authentication, and APIs**.
-
-### 2. `simple_apps` branch
-
-- Simplified version for **learning, prototypes, or small projects**.
-- Minimal setup, fewer dependencies, smaller folder structure.
-- Easier to understand and extend for beginners.
-
----
-
-## Getting Started
-
-### Clone a specific branch
-
-**Main branch (large apps):**
-
-```bash
-git clone --branch main --single-branch https://github.com/7078-cj/React-Django-Boilerplate.git
+```
+AMD_Hackathon/
+├── frontend/   # React application
+└── backend/    # Python API server
 ```
 
-**Simple apps branch (small apps):**
+## Setup
+
+### Prerequisites
+
+- Node.js (v18+) and npm
+- Python 3.10+
+- Git
+
+### 1. Clone the repository
 
 ```bash
-git clone --branch simple_apps --single-branch https://github.com/7078-cj/React-Django-Boilerplate.git
+git clone https://github.com/7078-cj/AMD_Hackathon.git
+cd AMD_Hackathon
 ```
 
----
+### 2. Backend setup
 
-## Frontend Setup (React)
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate      # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+Create a `.env` file in the `backend/` directory with any required API keys (e.g. your model/inference provider key). Use the provided `.env.example` as a guide — copy it and fill in your own values:
+
+```bash
+cp .env.example .env
+```
+
+
+Start the backend server (adjust the command/port to match the framework used in `backend/`, e.g. Flask/FastAPI/Django):
+
+```bash
+python manage.py runserver
+# or: flask run
+# or: uvicorn main:app --reload
+```
+
+### 3. Frontend setup
+
+Open a new terminal:
 
 ```bash
 cd frontend
@@ -53,44 +73,21 @@ npm install
 npm run dev
 ```
 
-- React app runs on: `http://localhost:5173`
-
----
-
-## Backend Setup (Django)
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate      # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-```
-
-- Backend runs on: `http://127.0.0.1:8000`
-
----
+The frontend will typically be available at `http://localhost:5173` (Vite) or `http://localhost:3000`, and will call the backend API — make sure the backend URL is configured correctly (check for a `.env` or config file in `frontend/`).
 
 ## Usage
 
-- Choose branch according to app size.
-- Use `main` for large apps with Redux and full features.
-- Use `simple_apps` for smaller apps or learning purposes.
+1. Start the backend server.
+2. Start the frontend dev server.
+3. Open the app in your browser, describe your trip and desired vibe, and generate your itinerary.
 
----
-
-## Contribution
+## Contributing
 
 1. Fork the repo
 2. Create a feature branch
-3. Commit changes
+3. Commit your changes
 4. Open a Pull Request
-
----
 
 ## License
 
 MIT License
-
----
